@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Penting untuk LFS dan Push balik
+          fetch-depth: 0 
 
       - name: Set up Python 3.12.7
         uses: actions/setup-python@v4
@@ -32,6 +32,8 @@ jobs:
 
       - name: Run mlflow project
         run: |
+          # Perbaikan: Paksa MLflow menggunakan SQLite lokal agar tidak mencari port 5000
+          export MLFLOW_TRACKING_URI=sqlite:///mlflow.db
           mlflow run . --env-manager=local 
 
       - name: Set up Git LFS
@@ -45,6 +47,8 @@ jobs:
 
       - name: Save mlruns to repo
         run: |
+          # Tambahkan git pull agar tidak ada konflik saat push balik
+          git pull origin main
           git add -f mlruns/
           git commit -m "Save mlruns from CI run" || true
           git push origin main
