@@ -13,10 +13,10 @@ if __name__ == "__main__":
     np.random.seed(40)
 
     # 1. Menangani pengambilan file dataset
-    # Jika ada argumen ke-3 dari terminal, gunakan itu. Jika tidak, cari "train_pca.csv" di folder yang sama.
     if len(sys.argv) > 3:
         file_path = sys.argv[3]
     else:
+        # Mencari file train_pca.csv di folder yang sama dengan skrip ini
         file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "train_pca.csv")
     
     # Membaca data
@@ -36,17 +36,19 @@ if __name__ == "__main__":
     input_example = X_train[0:5]
 
     # 3. Menangkap Parameter dari MLproject (sys.argv)
-    # sys.argv[1] adalah n_estimators, sys.argv[2] adalah max_depth
     n_estimators = int(sys.argv[1]) if len(sys.argv) > 1 else 505
     max_depth = int(sys.argv[2]) if len(sys.argv) > 2 else 37
 
     # 4. Proses MLflow
-    # Set Tracking URI (Opsional jika dijalankan lewat 'mlflow run', tapi bagus untuk jaga-jaga)
-    mlflow.set_tracking_uri("http://127.0.0.1:5000/")
-    #mlflow.set_experiment("Latihan Credit Scoring")
+    # PERBAIKAN: Cek apakah Tracking URI sudah diset (misal via environment variable di CI)
+    # Jika belum diset, gunakan SQLite lokal agar tidak error "Connection Refused"
+    if not mlflow.is_tracking_uri_set():
+        mlflow.set_tracking_uri("sqlite:///mlflow.db")
+    
+    # mlflow.set_experiment("Latihan Credit Scoring")
 
     with mlflow.start_run():
-        # A. Log Parameter agar muncul di tabel Dashboard
+        # A. Log Parameter
         mlflow.log_param("n_estimators", n_estimators)
         mlflow.log_param("max_depth", max_depth)
 
@@ -61,7 +63,7 @@ if __name__ == "__main__":
             input_example=input_example
         )
 
-        # D. Log Metrics (Hasil ukur)
+        # D. Log Metrics
         accuracy = model.score(X_test, y_test)
         mlflow.log_metric("accuracy", accuracy)
 
